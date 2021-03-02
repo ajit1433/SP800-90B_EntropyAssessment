@@ -14,6 +14,7 @@
 #include <limits.h>
 #include <sys/sysinfo.h>
 
+#include "generic.h"
 typedef struct DATA_FOR_THREADS {
     int counter;
     char *indir;
@@ -24,7 +25,7 @@ typedef struct DATA_FOR_THREADS {
 data_t global_data;
 bool global_initial_entropy, global_all_bits;
 pthread_mutex_t __lock;
-static int v = 1;
+static int __verbose;
 
 [[noreturn]] void print_usage() {
     printf("Usage is: ea_non_iid [-i|-c] [-a|-t] [-v] [-l <index>,<samples> ] <file_name> [bits_per_symbol]\n\n");
@@ -73,8 +74,8 @@ void *func(void *params) {
     unsigned long long inint;
     char *nextOption;
     DATA_FOR_THREADS *thread_data = (DATA_FOR_THREADS *)params;
-    verbose = v;
-    v = 0;
+    verbose = __verbose;
+    __verbose = 0;
 
     // collect data
     int i = thread_data->counter;
@@ -431,7 +432,6 @@ int main(int argc, char *argv[]) {
         counter[i-1] = i;
     }
 
-    int max_usable_cores = get_nprocs() - 1;
     pthread_t thread_id1, thread_id2, thread_id3, thread_id4, thread_id5, thread_id6, thread_id7, thread_id8, thread_id9, thread_id10, thread_id11, thread_id12, thread_id13, thread_id14;
 
     DATA_FOR_THREADS params;
@@ -440,16 +440,19 @@ int main(int argc, char *argv[]) {
     asprintf(&(params.outdir), "%s", "result_binary");
     asprintf(&(params.indir), "%s", "data_binary");
 
-    for (int i = 1; i <= 1000; i+=max_usable_cores) {
-
-        printf("Before Thread %d - %d\n", i, i+14);
+#if __MULTIPLE_THREADS__
+    for (int i = 1; i <= 1000; i+=14) {
+#else
+    for (int i = 1; i <= 1000; i+=1) {
+#endif
 
         // create and start
         pthread_mutex_lock(&__lock);
+        __verbose = 1;
         params.counter = i;
         pthread_create(&thread_id1, NULL, func, (void *)&params);
 
-
+#if __MULTIPLE_THREADS__
         pthread_mutex_lock(&__lock);
         params.counter = i+1;
         pthread_create(&thread_id2, NULL, func, (void *)&params);
@@ -501,9 +504,11 @@ int main(int argc, char *argv[]) {
         pthread_mutex_lock(&__lock);
         params.counter = i+13;
         pthread_create(&thread_id14, NULL, func, (void *)&params);
+#endif
 
         // wait for complete
         pthread_join(thread_id1, NULL);
+#if __MULTIPLE_THREADS__
         pthread_join(thread_id2, NULL);
         pthread_join(thread_id3, NULL);
         pthread_join(thread_id4, NULL);
@@ -517,9 +522,7 @@ int main(int argc, char *argv[]) {
         pthread_join(thread_id12, NULL);
         pthread_join(thread_id13, NULL);
         pthread_join(thread_id14, NULL);
-
-        printf("After Thread %d - %d\n", i, i+14);
-
+#endif
     }
 #endif // __BINARY_DATA__
 
@@ -528,25 +531,20 @@ int main(int argc, char *argv[]) {
     // data 4bit
     asprintf(&(params.outdir), "%s", "result_4bit");
     asprintf(&(params.indir), "%s", "data_4bit");
+
+#if __MULTIPLE_THREADS__
     for (int i = 1; i <= 1000; i+=14) {
-
-#if 0
-        char cwd[PATH_MAX];
-        if (getcwd(cwd, sizeof(cwd)) != NULL) {
-            printf("Current working dir: %s\n", cwd);
-        } else {
-            perror("getcwd() error");
-            return 1;
-        }
+#else
+    for (int i = 1; i <= 1000; i+=1) {
 #endif
-
-        printf("Before Thread %d - %d\n", i, i+14);
 
         // create and start
         pthread_mutex_lock(&__lock);
+        __verbose = 1;
         params.counter = i;
         pthread_create(&thread_id1, NULL, func, (void *)&params);
 
+#if __MULTIPLE_THREADS__
         pthread_mutex_lock(&__lock);
         params.counter = i+1;
         pthread_create(&thread_id2, NULL, func, (void *)&params);
@@ -598,9 +596,11 @@ int main(int argc, char *argv[]) {
         pthread_mutex_lock(&__lock);
         params.counter = i+13;
         pthread_create(&thread_id14, NULL, func, (void *)&params);
+#endif
 
         // wait for complete
         pthread_join(thread_id1, NULL);
+#if __MULTIPLE_THREADS__
         pthread_join(thread_id2, NULL);
         pthread_join(thread_id3, NULL);
         pthread_join(thread_id4, NULL);
@@ -614,9 +614,7 @@ int main(int argc, char *argv[]) {
         pthread_join(thread_id12, NULL);
         pthread_join(thread_id13, NULL);
         pthread_join(thread_id14, NULL);
-
-        printf("After Thread %d - %d\n", i, i+14);
-
+#endif
     }
 #endif // __4BIT_DATA__
 
@@ -625,25 +623,20 @@ int main(int argc, char *argv[]) {
     // data 8bit
     asprintf(&(params.outdir), "%s", "result_8bit");
     asprintf(&(params.indir), "%s", "data_8bit");
-    for (int i = 1; i < 1000; i+=14) {
 
-#if 0
-        char cwd[PATH_MAX];
-        if (getcwd(cwd, sizeof(cwd)) != NULL) {
-            printf("Current working dir: %s\n", cwd);
-        } else {
-            perror("getcwd() error");
-            return 1;
-        }
+#if __MULTIPLE_THREADS__
+    for (int i = 1; i <= 1000; i+=14) {
+#else
+    for (int i = 1; i <= 1000; i+=1) {
 #endif
-
-        printf("Before Thread %d - %d\n", i, i+14);
 
         // create and start
         pthread_mutex_lock(&__lock);
+        __verbose = 1;
         params.counter = i;
         pthread_create(&thread_id1, NULL, func, (void *)&params);
 
+#if __MULTIPLE_THREADS__
         pthread_mutex_lock(&__lock);
         params.counter = i+1;
         pthread_create(&thread_id2, NULL, func, (void *)&params);
@@ -695,9 +688,11 @@ int main(int argc, char *argv[]) {
         pthread_mutex_lock(&__lock);
         params.counter = i+13;
         pthread_create(&thread_id14, NULL, func, (void *)&params);
+#endif
 
         // wait for complete
         pthread_join(thread_id1, NULL);
+#if __MULTIPLE_THREADS__
         pthread_join(thread_id2, NULL);
         pthread_join(thread_id3, NULL);
         pthread_join(thread_id4, NULL);
@@ -711,9 +706,7 @@ int main(int argc, char *argv[]) {
         pthread_join(thread_id12, NULL);
         pthread_join(thread_id13, NULL);
         pthread_join(thread_id14, NULL);
-
-        printf("After Thread %d - %d\n", i, i+14);
-
+#endif
     }
 #endif // __8BIT_DATA__
     return 0;
