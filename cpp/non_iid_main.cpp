@@ -128,67 +128,82 @@ void *func(void *params) {
     // Section 6.3.1 - Estimate entropy with Most Common Value
     if (((data.alph_size > 2) || !initial_entropy)) {
         ret_min_entropy = most_common(data.bsymbols, data.blen, 2, verbose, "Bitstring");
+
         if (verbose > 0) printf("\tMost Common Value Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
         H_bitstring = min(ret_min_entropy, H_bitstring);
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, true, i, thread_data->outdir);
 
     if (initial_entropy) {
         ret_min_entropy = most_common(data.symbols, data.len, data.alph_size, verbose, "Literal");
         if (verbose > 0)
             printf("\tMost Common Value Estimate = %f / %d bit(s)\n", ret_min_entropy, data.word_size);
         H_original = min(ret_min_entropy, H_original);
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (verbose > 0) printf("\nRunning Entropic Statistic Estimates (bit strings only)...\n");
 
     // Section 6.3.2 - Estimate entropy with Collision Test (for bit strings only)
     if (((data.alph_size > 2) || !initial_entropy)) {
         ret_min_entropy = collision_test(data.bsymbols, data.blen, verbose, "Bitstring");
+
         if (verbose > 0) printf("\tCollision Test Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
         H_bitstring = min(ret_min_entropy, H_bitstring);
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (initial_entropy && (data.alph_size == 2)) {
         ret_min_entropy = collision_test(data.symbols, data.len, verbose, "Literal");
+
         if (verbose > 0) printf("\tCollision Test Estimate = %f / 1 bit(s)\n", ret_min_entropy);
         H_original = min(ret_min_entropy, H_original);
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     // Section 6.3.3 - Estimate entropy with Markov Test (for bit strings only)
     if (((data.alph_size > 2) || !initial_entropy)) {
         ret_min_entropy = markov_test(data.bsymbols, data.blen, verbose, "Bitstring");
+
         if (verbose > 0) printf("\tMarkov Test Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
         H_bitstring = min(ret_min_entropy, H_bitstring);
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (initial_entropy && (data.alph_size == 2)) {
         ret_min_entropy = markov_test(data.symbols, data.len, verbose, "Literal");
+
         if (verbose > 0) printf("\tMarkov Test Estimate = %f / 1 bit(s)\n", ret_min_entropy);
         H_original = min(ret_min_entropy, H_original);
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     // Section 6.3.4 - Estimate entropy with Compression Test (for bit strings only)
     if (((data.alph_size > 2) || !initial_entropy)) {
         ret_min_entropy = compression_test(data.bsymbols, data.blen, verbose, "Bitstring");
+
         if (ret_min_entropy >= 0) {
             if (verbose > 0) printf("\tCompression Test Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (initial_entropy && (data.alph_size == 2)) {
         ret_min_entropy = compression_test(data.symbols, data.len, verbose, "Literal");
+
         if (verbose > 0) printf("\ttCompression Test Estimate = %f / 1 bit(s)\n", ret_min_entropy);
         H_original = min(ret_min_entropy, H_original);
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (verbose > 0) printf("\nRunning Tuple Estimates...\n");
 
@@ -200,8 +215,10 @@ void *func(void *params) {
             if (verbose > 0) printf("\tT-Tuple Test Estimate (bit string) = %f / 1 bit(s)\n", bin_t_tuple_res);
             H_bitstring = min(bin_t_tuple_res, H_bitstring);
         }
+
+        log_to_file(&bin_t_tuple_res, false, i, thread_data->outdir);
+
     }
-    log_to_file(&bin_t_tuple_res, false, i, thread_data->outdir);
 
     if (initial_entropy) {
         SAalgs(data.symbols, data.len, data.alph_size, t_tuple_res, lrs_res, verbose, "Literal");
@@ -209,111 +226,130 @@ void *func(void *params) {
             if (verbose > 0) printf("\tT-Tuple Test Estimate = %f / %d bit(s)\n", t_tuple_res, data.word_size);
             H_original = min(t_tuple_res, H_original);
         }
+
+        log_to_file(&t_tuple_res, false, i, thread_data->outdir);
     }
-    log_to_file(&t_tuple_res, false, i, thread_data->outdir);
 
     // Section 6.3.6 - Estimate entropy with LRS Test
     if (((data.alph_size > 2) || !initial_entropy)) {
         if (verbose > 0) printf("\tLRS Test Estimate (bit string) = %f / 1 bit(s)\n", bin_lrs_res);
         H_bitstring = min(bin_lrs_res, H_bitstring);
+
+        log_to_file(&bin_lrs_res, false, i, thread_data->outdir);
     }
-    log_to_file(&bin_lrs_res, false, i, thread_data->outdir);
 
 
     if (initial_entropy) {
         if (verbose > 0) printf("\tLRS Test Estimate = %f / %d bit(s)\n", lrs_res, data.word_size);
         H_original = min(lrs_res, H_original);
+
+        log_to_file(&lrs_res, false, i, thread_data->outdir);
     }
-    log_to_file(&lrs_res, false, i, thread_data->outdir);
 
     if (verbose > 0) printf("\nRunning Predictor Estimates...\n");
 
     if (((data.alph_size > 2) || !initial_entropy)) {
         // Section 6.3.7 - Estimate entropy with Multi Most Common in Window Test
         ret_min_entropy = multi_mcw_test(data.bsymbols, data.blen, 2, verbose, "Bitstring");
+
         if (ret_min_entropy >= 0) {
             if (verbose > 0)
                 printf("\tMulti Most Common in Window (MultiMCW) Prediction Test Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (initial_entropy) {
         ret_min_entropy = multi_mcw_test(data.symbols, data.len, data.alph_size, verbose, "Literal");
+
         if (ret_min_entropy >= 0) {
             if (verbose > 0)
                 printf("\tMulti Most Common in Window (MultiMCW) Prediction Test Estimate = %f / %d bit(s)\n",
                        ret_min_entropy, data.word_size);
             H_original = min(ret_min_entropy, H_original);
         }
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     // Section 6.3.8 - Estimate entropy with Lag Prediction Test
     if (((data.alph_size > 2) || !initial_entropy)) {
         ret_min_entropy = lag_test(data.bsymbols, data.blen, 2, verbose, "Bitstring");
+
         if (ret_min_entropy >= 0) {
             if (verbose > 0)
                 printf("\tLag Prediction Test Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (initial_entropy) {
         ret_min_entropy = lag_test(data.symbols, data.len, data.alph_size, verbose, "Literal");
+
         if (ret_min_entropy >= 0) {
             if (verbose > 0)
                 printf("\tLag Prediction Test Estimate = %f / %d bit(s)\n", ret_min_entropy, data.word_size);
             H_original = min(ret_min_entropy, H_original);
         }
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     // Section 6.3.9 - Estimate entropy with Multi Markov Model with Counting Test (MultiMMC)
     if (((data.alph_size > 2) || !initial_entropy)) {
         ret_min_entropy = multi_mmc_test(data.bsymbols, data.blen, 2, verbose, "Bitstring");
+
         if (ret_min_entropy >= 0) {
             if (verbose > 0)
                 printf("\tMulti Markov Model with Counting (MultiMMC) Prediction Test Estimate (bit string) = %f / 1 bit(s)\n",
                        ret_min_entropy);
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (initial_entropy) {
         ret_min_entropy = multi_mmc_test(data.symbols, data.len, data.alph_size, verbose, "Literal");
+
         if (ret_min_entropy >= 0) {
             if (verbose > 0)
                 printf("\tMulti Markov Model with Counting (MultiMMC) Prediction Test Estimate = %f / %d bit(s)\n",
                        ret_min_entropy, data.word_size);
             H_original = min(ret_min_entropy, H_original);
         }
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     // Section 6.3.10 - Estimate entropy with LZ78Y Test
     if (((data.alph_size > 2) || !initial_entropy)) {
         ret_min_entropy = LZ78Y_test(data.bsymbols, data.blen, 2, verbose, "Bitstring");
+
         if (ret_min_entropy >= 0) {
             if (verbose > 0)
                 printf("\tLZ78Y Prediction Test Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (initial_entropy) {
         ret_min_entropy = LZ78Y_test(data.symbols, data.len, data.alph_size, verbose, "Literal");
+
         if (ret_min_entropy >= 0) {
             if (verbose > 0)
                 printf("\tLZ78Y Prediction Test Estimate = %f / %d bit(s)\n", ret_min_entropy, data.word_size);
             H_original = min(ret_min_entropy, H_original);
         }
+
+        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-    log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
 
     if (verbose > 0) {
         printf("\n");
@@ -324,7 +360,12 @@ void *func(void *params) {
                 printf("min(H_original, %d X H_bitstring): %f\n\n", data.word_size,
                        min(H_original, data.word_size * H_bitstring));
             }
-        } else printf("h': %f\n", H_bitstring);
+            double val = data.word_size * H_bitstring;
+            log_to_file(&val, false, i, thread_data->outdir);
+        } else  {
+            printf("h': %f\n", H_bitstring);
+             log_to_file(&H_bitstring, false, i, thread_data->outdir);
+        }
     } else {
         double h_assessed = data.word_size;
 
@@ -336,11 +377,13 @@ void *func(void *params) {
         if (initial_entropy) {
             h_assessed = min(h_assessed, H_original);
             if (verbose > 0) printf("H_original: %.17g\n", H_original);
+             log_to_file(&H_original, false, i, thread_data->outdir);
         }
 
         if (verbose > 0) printf("Assessed min entropy: %.17g\n", h_assessed);
+        log_to_file(&h_assessed, false, i, thread_data->outdir);
     }
-
+    log_to_file(NULL, true, i, thread_data->outdir);
     free_data(&data);
 }
 
@@ -365,7 +408,7 @@ int main(int argc, char *argv[]) {
 
     global_data.word_size = 0;
 
-    global_initial_entropy = true;
+    global_initial_entropy = false;
     global_all_bits = true;
 
     while ((opt = getopt(argc, argv, "icatvl:")) != -1) {
@@ -526,11 +569,11 @@ int main(int argc, char *argv[]) {
     }
 #endif // __BINARY_DATA__
 
-#if __4BIT_DATA__
+#if __2BIT_DATA__
 
-    // data 4bit
-    asprintf(&(params.outdir), "%s", "result_4bit");
-    asprintf(&(params.indir), "%s", "data_4bit");
+    // data 2bit
+    asprintf(&(params.outdir), "%s", "result_2bit");
+    asprintf(&(params.indir), "%s", "data_2bit");
 
 #if __MULTIPLE_THREADS__
     for (int i = 1; i <= 1000; i+=14) {
@@ -616,7 +659,7 @@ int main(int argc, char *argv[]) {
         pthread_join(thread_id14, NULL);
 #endif
     }
-#endif // __4BIT_DATA__
+#endif // __2BIT_DATA__
 
 #if __8BIT_DATA__
 
