@@ -350,7 +350,7 @@ void *func(void *params) {
 
         log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
     }
-
+    verbose = 0;
     if (verbose > 0) {
         printf("\n");
         if (initial_entropy) {
@@ -364,7 +364,8 @@ void *func(void *params) {
             log_to_file(&val, false, i, thread_data->outdir);
         } else  {
             printf("h': %f\n", H_bitstring);
-             log_to_file(&H_bitstring, false, i, thread_data->outdir);
+            double val = data.word_size * H_bitstring;
+            log_to_file(&val, false, i, thread_data->outdir);
         }
     } else {
         double h_assessed = data.word_size;
@@ -377,7 +378,7 @@ void *func(void *params) {
         if (initial_entropy) {
             h_assessed = min(h_assessed, H_original);
             if (verbose > 0) printf("H_original: %.17g\n", H_original);
-             log_to_file(&H_original, false, i, thread_data->outdir);
+             log_to_file(&h_assessed, false, i, thread_data->outdir);
         }
 
         if (verbose > 0) printf("Assessed min entropy: %.17g\n", h_assessed);
@@ -408,7 +409,7 @@ int main(int argc, char *argv[]) {
 
     global_data.word_size = 0;
 
-    global_initial_entropy = false;
+    global_initial_entropy = true;
     global_all_bits = true;
 
     while ((opt = getopt(argc, argv, "icatvl:")) != -1) {
