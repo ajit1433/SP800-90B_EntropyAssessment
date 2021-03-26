@@ -15,15 +15,19 @@
 #include <sys/sysinfo.h>
 
 #include "generic.h"
+
+#define START_FILE_NUM 1001
+
 typedef struct DATA_FOR_THREADS {
     int counter;
     char *indir;
     char *outdir;
+    bool initial_entropy;
 } DATA_FOR_THREADS;
 
 
-data_t global_data;
-bool global_initial_entropy, global_all_bits;
+//data_t global_data;
+//bool global_initial_entropy, global_all_bits;
 pthread_mutex_t __lock;
 static int __verbose;
 
@@ -80,13 +84,13 @@ void *func(void *params) {
     // collect data
     int i = thread_data->counter;
     pthread_mutex_unlock(&__lock);
-    if (i > 1000) {
+    if (i > 1094) {
         return NULL;
     }
 
-    initial_entropy = global_initial_entropy;
-    all_bits = global_all_bits;
-    data.word_size = global_data.word_size;
+    initial_entropy = thread_data->initial_entropy;
+    all_bits = true;
+    data.word_size = 0; // auto detect
 
     asprintf(&file_path, "data/%s/%05d.bin", thread_data->indir, i);
     puts(file_path);
@@ -388,106 +392,26 @@ void *func(void *params) {
     free_data(&data);
 }
 
-int main(int argc, char *argv[]) {
+int driver(const char *indir, const char *outdir, bool initial_entropy) {
 
     if (pthread_mutex_init(&__lock, NULL) != 0) {
         printf("\n mutex init has failed\n");
         return 1;
     }
 
-    int verbose = 0;
-    char *file_path;
-    double H_original, H_bitstring, ret_min_entropy;
-    int opt;
-    double bin_t_tuple_res = -1.0, bin_lrs_res = -1.0;
-    double t_tuple_res = -1.0, lrs_res = -1.0;
-    unsigned long subsetIndex = ULONG_MAX;
-    unsigned long subsetSize = 0;
-    unsigned long long inint;
-    char *nextOption;
-
-
-    global_data.word_size = 0;
-
-    global_initial_entropy = true;
-    global_all_bits = true;
-
-    while ((opt = getopt(argc, argv, "icatvl:")) != -1) {
-        switch (opt) {
-            case 'i':
-                global_initial_entropy = true;
-                break;
-            case 'c':
-                global_initial_entropy = false;
-                break;
-            case 'a':
-                global_all_bits = true;
-                break;
-            case 't':
-                global_all_bits = false;
-                break;
-            case 'v':
-                verbose++;
-                break;
-            case 'l':
-                inint = strtoull(optarg, &nextOption, 0);
-                if ((inint > ULONG_MAX) || (errno == EINVAL) || (nextOption == NULL) || (*nextOption != ',')) {
-                    print_usage();
-                }
-                subsetIndex = inint;
-
-                nextOption++;
-
-                inint = strtoull(nextOption, NULL, 0);
-                if ((inint > ULONG_MAX) || (errno == EINVAL)) {
-                    print_usage();
-                }
-                subsetSize = inint;
-                break;
-            default:
-                print_usage();
-        }
-    }
-
-    argc -= optind;
-    argv += optind;
-
-    // Parse args
-    if ((argc != 1) && (argc != 2)) {
-        printf("Incorrect usage.\n");
-        print_usage();
-    }
-    // get filename
-    file_path = argv[0];
-
-    if (argc == 2) {
-        // get bits per word
-        inint = atoi(argv[1]);
-        if (inint < 1 || inint > 8) {
-            printf("Invalid bits per symbol.\n");
-            print_usage();
-        } else {
-            global_data.word_size = inint;
-        }
-    }
-
-    int counter[1000] = {0};
-    for (int i = 1; i <= 1000; i++) {
-        counter[i-1] = i;
-    }
-
-    pthread_t thread_id1, thread_id2, thread_id3, thread_id4, thread_id5, thread_id6, thread_id7, thread_id8, thread_id9, thread_id10, thread_id11, thread_id12, thread_id13, thread_id14;
+    pthread_t thread_id1, thread_id2, thread_id3, thread_id4, thread_id5, thread_id6, thread_id7, thread_id8, thread_id9, thread_id10, thread_id11, thread_id12, thread_id13, thread_id14, thread_id15, thread_id16;
 
     DATA_FOR_THREADS params;
 
-#if __BINARY_DATA__
-    asprintf(&(params.outdir), "%s", "result_binary");
-    asprintf(&(params.indir), "%s", "data_binary");
+    asprintf(&(params.outdir), "%s", outdir);
+    asprintf(&(params.indir), "%s", indir);
+
+    params.initial_entropy = initial_entropy;
 
 #if __MULTIPLE_THREADS__
-    for (int i = 1; i <= 1000; i+=14) {
+    for (int i = START_FILE_NUM; i <= MAX_SAMPLE_FILES; i+=16) {
 #else
-    for (int i = 1; i <= 1000; i+=1) {
+    for (int i = START_FILE_NUM; i <= MAX_SAMPLE_FILES; i+=1) {
 #endif
 
         // create and start
@@ -548,6 +472,14 @@ int main(int argc, char *argv[]) {
         pthread_mutex_lock(&__lock);
         params.counter = i+13;
         pthread_create(&thread_id14, NULL, func, (void *)&params);
+
+        pthread_mutex_lock(&__lock);
+        params.counter = i+14;
+        pthread_create(&thread_id15, NULL, func, (void *)&params);
+
+        pthread_mutex_lock(&__lock);
+        params.counter = i+15;
+        pthread_create(&thread_id16, NULL, func, (void *)&params);
 #endif
 
         // wait for complete
@@ -566,192 +498,35 @@ int main(int argc, char *argv[]) {
         pthread_join(thread_id12, NULL);
         pthread_join(thread_id13, NULL);
         pthread_join(thread_id14, NULL);
+        pthread_join(thread_id15, NULL);
+        pthread_join(thread_id16, NULL);
 #endif
     }
-#endif // __BINARY_DATA__
+
+    return 0;
+}
+
+int main () {
+    printf("started\n");
+#if __BINARY_DATA__
+#if __INITIAL_ENTROPY__
+    driver("data_binary", "result_binary_ie", true);
+#endif
+    driver("data_binary", "result_binary", false);
+#endif // __8BIT_DATA__
 
 #if __2BIT_DATA__
-
-    // data 2bit
-    asprintf(&(params.outdir), "%s", "result_2bit");
-    asprintf(&(params.indir), "%s", "data_2bit");
-
-#if __MULTIPLE_THREADS__
-    for (int i = 1; i <= 1000; i+=14) {
-#else
-    for (int i = 1; i <= 1000; i+=1) {
+#if __INITIAL_ENTROPY__
+    driver("data_2bit", "result_2bit_ie", true);
 #endif
-
-        // create and start
-        pthread_mutex_lock(&__lock);
-        __verbose = 1;
-        params.counter = i;
-        pthread_create(&thread_id1, NULL, func, (void *)&params);
-
-#if __MULTIPLE_THREADS__
-        pthread_mutex_lock(&__lock);
-        params.counter = i+1;
-        pthread_create(&thread_id2, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+2;
-        pthread_create(&thread_id3, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+3;
-        pthread_create(&thread_id4, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+4;
-        pthread_create(&thread_id5, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+5;
-        pthread_create(&thread_id6, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+6;
-        pthread_create(&thread_id7, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+7;
-        pthread_create(&thread_id8, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+8;
-        pthread_create(&thread_id9, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+9;
-        pthread_create(&thread_id10, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+10;
-        pthread_create(&thread_id11, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+11;
-        pthread_create(&thread_id12, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+12;
-        pthread_create(&thread_id13, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+13;
-        pthread_create(&thread_id14, NULL, func, (void *)&params);
-#endif
-
-        // wait for complete
-        pthread_join(thread_id1, NULL);
-#if __MULTIPLE_THREADS__
-        pthread_join(thread_id2, NULL);
-        pthread_join(thread_id3, NULL);
-        pthread_join(thread_id4, NULL);
-        pthread_join(thread_id5, NULL);
-        pthread_join(thread_id6, NULL);
-        pthread_join(thread_id7, NULL);
-        pthread_join(thread_id8, NULL);
-        pthread_join(thread_id9, NULL);
-        pthread_join(thread_id10, NULL);
-        pthread_join(thread_id11, NULL);
-        pthread_join(thread_id12, NULL);
-        pthread_join(thread_id13, NULL);
-        pthread_join(thread_id14, NULL);
-#endif
-    }
+    driver("data_2bit", "result_2bit", false);
 #endif // __2BIT_DATA__
 
 #if __8BIT_DATA__
-
-    // data 8bit
-    asprintf(&(params.outdir), "%s", "result_8bit");
-    asprintf(&(params.indir), "%s", "data_8bit");
-
-#if __MULTIPLE_THREADS__
-    for (int i = 1; i <= 1000; i+=14) {
-#else
-    for (int i = 1; i <= 1000; i+=1) {
+#if __INITIAL_ENTROPY__
+    driver("data_8bit", "result_8bit_ie", true);
 #endif
-
-        // create and start
-        pthread_mutex_lock(&__lock);
-        __verbose = 1;
-        params.counter = i;
-        pthread_create(&thread_id1, NULL, func, (void *)&params);
-
-#if __MULTIPLE_THREADS__
-        pthread_mutex_lock(&__lock);
-        params.counter = i+1;
-        pthread_create(&thread_id2, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+2;
-        pthread_create(&thread_id3, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+3;
-        pthread_create(&thread_id4, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+4;
-        pthread_create(&thread_id5, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+5;
-        pthread_create(&thread_id6, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+6;
-        pthread_create(&thread_id7, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+7;
-        pthread_create(&thread_id8, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+8;
-        pthread_create(&thread_id9, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+9;
-        pthread_create(&thread_id10, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+10;
-        pthread_create(&thread_id11, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+11;
-        pthread_create(&thread_id12, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+12;
-        pthread_create(&thread_id13, NULL, func, (void *)&params);
-
-        pthread_mutex_lock(&__lock);
-        params.counter = i+13;
-        pthread_create(&thread_id14, NULL, func, (void *)&params);
-#endif
-
-        // wait for complete
-        pthread_join(thread_id1, NULL);
-#if __MULTIPLE_THREADS__
-        pthread_join(thread_id2, NULL);
-        pthread_join(thread_id3, NULL);
-        pthread_join(thread_id4, NULL);
-        pthread_join(thread_id5, NULL);
-        pthread_join(thread_id6, NULL);
-        pthread_join(thread_id7, NULL);
-        pthread_join(thread_id8, NULL);
-        pthread_join(thread_id9, NULL);
-        pthread_join(thread_id10, NULL);
-        pthread_join(thread_id11, NULL);
-        pthread_join(thread_id12, NULL);
-        pthread_join(thread_id13, NULL);
-        pthread_join(thread_id14, NULL);
-#endif
-    }
+    driver("data_8bit", "result_8bit", false);
 #endif // __8BIT_DATA__
-    return 0;
+    printf("completed\n");
 }
