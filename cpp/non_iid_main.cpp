@@ -16,18 +16,16 @@
 
 #include "generic.h"
 
-#define START_FILE_NUM 1001
+#define START_FILE_NUM 1
 
 typedef struct DATA_FOR_THREADS {
     int counter;
+    char *parent_dir;
     char *indir;
     char *outdir;
     bool initial_entropy;
 } DATA_FOR_THREADS;
 
-
-//data_t global_data;
-//bool global_initial_entropy, global_all_bits;
 pthread_mutex_t __lock;
 static int __verbose;
 
@@ -92,7 +90,7 @@ void *func(void *params) {
     all_bits = true;
     data.word_size = 0; // auto detect
 
-    asprintf(&file_path, "data/%s/%05d.bin", thread_data->indir, i);
+    asprintf(&file_path, "./data_store/%s/%s/%05d.bin", thread_data->parent_dir, thread_data->indir, i);
     puts(file_path);
     if (verbose > 0) printf("Opening file: '%s'\n", file_path);
 
@@ -136,7 +134,7 @@ void *func(void *params) {
         if (verbose > 0) printf("\tMost Common Value Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
         H_bitstring = min(ret_min_entropy, H_bitstring);
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (initial_entropy) {
@@ -145,7 +143,7 @@ void *func(void *params) {
             printf("\tMost Common Value Estimate = %f / %d bit(s)\n", ret_min_entropy, data.word_size);
         H_original = min(ret_min_entropy, H_original);
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (verbose > 0) printf("\nRunning Entropic Statistic Estimates (bit strings only)...\n");
@@ -157,7 +155,7 @@ void *func(void *params) {
         if (verbose > 0) printf("\tCollision Test Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
         H_bitstring = min(ret_min_entropy, H_bitstring);
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (initial_entropy && (data.alph_size == 2)) {
@@ -166,7 +164,7 @@ void *func(void *params) {
         if (verbose > 0) printf("\tCollision Test Estimate = %f / 1 bit(s)\n", ret_min_entropy);
         H_original = min(ret_min_entropy, H_original);
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     // Section 6.3.3 - Estimate entropy with Markov Test (for bit strings only)
@@ -176,7 +174,7 @@ void *func(void *params) {
         if (verbose > 0) printf("\tMarkov Test Estimate (bit string) = %f / 1 bit(s)\n", ret_min_entropy);
         H_bitstring = min(ret_min_entropy, H_bitstring);
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (initial_entropy && (data.alph_size == 2)) {
@@ -185,7 +183,7 @@ void *func(void *params) {
         if (verbose > 0) printf("\tMarkov Test Estimate = %f / 1 bit(s)\n", ret_min_entropy);
         H_original = min(ret_min_entropy, H_original);
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     // Section 6.3.4 - Estimate entropy with Compression Test (for bit strings only)
@@ -197,7 +195,7 @@ void *func(void *params) {
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (initial_entropy && (data.alph_size == 2)) {
@@ -206,7 +204,7 @@ void *func(void *params) {
         if (verbose > 0) printf("\ttCompression Test Estimate = %f / 1 bit(s)\n", ret_min_entropy);
         H_original = min(ret_min_entropy, H_original);
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (verbose > 0) printf("\nRunning Tuple Estimates...\n");
@@ -220,7 +218,7 @@ void *func(void *params) {
             H_bitstring = min(bin_t_tuple_res, H_bitstring);
         }
 
-        log_to_file(&bin_t_tuple_res, false, i, thread_data->outdir);
+        log_to_file(&bin_t_tuple_res, false, i, thread_data->parent_dir, thread_data->outdir);
 
     }
 
@@ -231,7 +229,7 @@ void *func(void *params) {
             H_original = min(t_tuple_res, H_original);
         }
 
-        log_to_file(&t_tuple_res, false, i, thread_data->outdir);
+        log_to_file(&t_tuple_res, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     // Section 6.3.6 - Estimate entropy with LRS Test
@@ -239,7 +237,7 @@ void *func(void *params) {
         if (verbose > 0) printf("\tLRS Test Estimate (bit string) = %f / 1 bit(s)\n", bin_lrs_res);
         H_bitstring = min(bin_lrs_res, H_bitstring);
 
-        log_to_file(&bin_lrs_res, false, i, thread_data->outdir);
+        log_to_file(&bin_lrs_res, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
 
@@ -247,7 +245,7 @@ void *func(void *params) {
         if (verbose > 0) printf("\tLRS Test Estimate = %f / %d bit(s)\n", lrs_res, data.word_size);
         H_original = min(lrs_res, H_original);
 
-        log_to_file(&lrs_res, false, i, thread_data->outdir);
+        log_to_file(&lrs_res, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (verbose > 0) printf("\nRunning Predictor Estimates...\n");
@@ -262,7 +260,7 @@ void *func(void *params) {
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (initial_entropy) {
@@ -275,7 +273,7 @@ void *func(void *params) {
             H_original = min(ret_min_entropy, H_original);
         }
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     // Section 6.3.8 - Estimate entropy with Lag Prediction Test
@@ -288,7 +286,7 @@ void *func(void *params) {
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (initial_entropy) {
@@ -300,7 +298,7 @@ void *func(void *params) {
             H_original = min(ret_min_entropy, H_original);
         }
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     // Section 6.3.9 - Estimate entropy with Multi Markov Model with Counting Test (MultiMMC)
@@ -314,7 +312,7 @@ void *func(void *params) {
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (initial_entropy) {
@@ -327,7 +325,7 @@ void *func(void *params) {
             H_original = min(ret_min_entropy, H_original);
         }
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     // Section 6.3.10 - Estimate entropy with LZ78Y Test
@@ -340,7 +338,7 @@ void *func(void *params) {
             H_bitstring = min(ret_min_entropy, H_bitstring);
         }
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
 
     if (initial_entropy) {
@@ -352,7 +350,7 @@ void *func(void *params) {
             H_original = min(ret_min_entropy, H_original);
         }
 
-        log_to_file(&ret_min_entropy, false, i, thread_data->outdir);
+        log_to_file(&ret_min_entropy, false, i, thread_data->parent_dir, thread_data->outdir);
     }
     verbose = 0;
     if (verbose > 0) {
@@ -365,11 +363,11 @@ void *func(void *params) {
                        min(H_original, data.word_size * H_bitstring));
             }
             double val = data.word_size * H_bitstring;
-            log_to_file(&val, false, i, thread_data->outdir);
+            log_to_file(&val, false, i, thread_data->parent_dir, thread_data->outdir);
         } else  {
             printf("h': %f\n", H_bitstring);
             double val = data.word_size * H_bitstring;
-            log_to_file(&val, false, i, thread_data->outdir);
+            log_to_file(&val, false, i, thread_data->parent_dir, thread_data->outdir);
         }
     } else {
         double h_assessed = data.word_size;
@@ -382,17 +380,17 @@ void *func(void *params) {
         if (initial_entropy) {
             h_assessed = min(h_assessed, H_original);
             if (verbose > 0) printf("H_original: %.17g\n", H_original);
-             log_to_file(&h_assessed, false, i, thread_data->outdir);
+             log_to_file(&h_assessed, false, i, thread_data->parent_dir, thread_data->outdir);
         }
 
         if (verbose > 0) printf("Assessed min entropy: %.17g\n", h_assessed);
-        log_to_file(&h_assessed, false, i, thread_data->outdir);
+        log_to_file(&h_assessed, false, i, thread_data->parent_dir, thread_data->outdir);
     }
-    log_to_file(NULL, true, i, thread_data->outdir);
+    log_to_file(NULL, true, i, thread_data->parent_dir, thread_data->outdir);
     free_data(&data);
 }
 
-int driver(const char *indir, const char *outdir, bool initial_entropy) {
+int driver(const char *parent_dir, const char *indir, const char *outdir, bool initial_entropy) {
 
     if (pthread_mutex_init(&__lock, NULL) != 0) {
         printf("\n mutex init has failed\n");
@@ -403,6 +401,7 @@ int driver(const char *indir, const char *outdir, bool initial_entropy) {
 
     DATA_FOR_THREADS params;
 
+    asprintf(&(params.parent_dir), "%s", parent_dir);
     asprintf(&(params.outdir), "%s", outdir);
     asprintf(&(params.indir), "%s", indir);
 
@@ -507,26 +506,5 @@ int driver(const char *indir, const char *outdir, bool initial_entropy) {
 }
 
 int main () {
-    printf("started\n");
-#if __BINARY_DATA__
-#if __INITIAL_ENTROPY__
-    driver("data_binary", "result_binary_ie", true);
-#endif
-    driver("data_binary", "result_binary", false);
-#endif // __8BIT_DATA__
-
-#if __2BIT_DATA__
-#if __INITIAL_ENTROPY__
-    driver("data_2bit", "result_2bit_ie", true);
-#endif
-    driver("data_2bit", "result_2bit", false);
-#endif // __2BIT_DATA__
-
-#if __8BIT_DATA__
-#if __INITIAL_ENTROPY__
-    driver("data_8bit", "result_8bit_ie", true);
-#endif
-    driver("data_8bit", "result_8bit", false);
-#endif // __8BIT_DATA__
-    printf("completed\n");
+    printf("use driver function to run this program!\n");
 }
